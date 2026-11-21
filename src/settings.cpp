@@ -460,6 +460,17 @@ void CClientSettings::ReadSettingsFromXML ( const QDomDocument& IniXMLDocument, 
         bEnableAudioAlerts = bValue;
     }
 
+    // audio alert volumes
+    if ( GetNumericIniSet ( IniXMLDocument, "client", "chatalertvolume", 0, 100, iValue ) )
+    {
+        iChatAlertVolume = iValue;
+    }
+
+    if ( GetNumericIniSet ( IniXMLDocument, "client", "newuseralertvolume", 0, 100, iValue ) )
+    {
+        iNewUserAlertVolume = iValue;
+    }
+
     // name
     pClient->ChannelInfo.strName = FromBase64ToString (
         GetIniSetting ( IniXMLDocument, "client", "name_base64", ToBase64 ( QCoreApplication::translate ( "CMusProfDlg", "No Name" ) ) ) );
@@ -926,6 +937,10 @@ void CClientSettings::WriteSettingsToXML ( QDomDocument& IniXMLDocument, bool is
 
     // audio alerts
     SetFlagIniSet ( IniXMLDocument, "client", "enableaudioalerts", bEnableAudioAlerts );
+
+    // audio alert volumes
+    SetNumericIniSet ( IniXMLDocument, "client", "chatalertvolume", iChatAlertVolume );
+    SetNumericIniSet ( IniXMLDocument, "client", "newuseralertvolume", iNewUserAlertVolume );
 
     // name
     PutIniSetting ( IniXMLDocument, "client", "name_base64", ToBase64 ( pClient->ChannelInfo.strName ) );

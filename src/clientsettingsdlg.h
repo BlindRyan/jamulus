@@ -97,6 +97,8 @@ protected:
     CClient*         pClient;
     CClientSettings* pSettings;
     QTimer           TimerStatus;
+    QTimer           TimerChatAlertPreview;
+    QTimer           TimerNewUserAlertPreview;
     QButtonGroup     SndCrdBufferDelayButtonGroup;
 
 public slots:
@@ -120,6 +122,8 @@ public slots:
     void OnGUIDesignActivated ( int iDesignIdx );
     void OnMeterStyleActivated ( int iMeterStyleIdx );
     void OnAudioAlertsChanged ( int value );
+    void OnChatAlertVolumeChanged ( int value );
+    void OnNewUserAlertVolumeChanged ( int value );
     void OnLanguageChanged ( QString strLanguage ) { pSettings->strLanguage = strLanguage; }
     void OnAliasTextChanged ( const QString& strNewName );
     void OnInstrumentActivated ( int iCntryListItem );

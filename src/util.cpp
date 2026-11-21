@@ -837,8 +837,13 @@ QSize CMinimumStackedLayout::sizeHint() const
     return QStackedLayout::sizeHint();
 }
 
-void PlayAudioAlert ( QUrl soundUrl )
+void PlayAudioAlert ( QUrl soundUrl, const int iVolumePercent )
 {
+    if ( iVolumePercent <= 0 )
+    {
+        return; // muted
+    }
+
     QSoundEffect* sf = new QSoundEffect();
     QObject::connect ( sf, &QSoundEffect::playingChanged, sf, [sf]() {
         if ( !sf->isPlaying() )
@@ -847,6 +852,10 @@ void PlayAudioAlert ( QUrl soundUrl )
         }
     } );
     sf->setSource ( soundUrl );
+
+    // map the slider percentage (perceived loudness) to the linear volume QSoundEffect expects
+    sf->setVolume ( static_cast<float> (
+        QAudio::convertVolume ( qMin ( iVolumePercent, 100 ) / 100.0, QAudio::LogarithmicVolumeScale, QAudio::LinearVolumeScale ) ) );
     sf->play();
 }
 #endif

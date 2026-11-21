@@ -863,7 +863,7 @@ void CClientDlg::OnChatTextReceived ( QString strChatText )
 {
     if ( pSettings->bEnableAudioAlerts )
     {
-        PlayAudioAlert ( QUrl::fromLocalFile ( ":sounds/res/sounds/new_message.wav" ) );
+        PlayAudioAlert ( QUrl::fromLocalFile ( ":sounds/res/sounds/new_message.wav" ), pSettings->iChatAlertVolume );
     }
     ChatDlg.AddChatText ( strChatText );
 
@@ -912,7 +912,7 @@ void CClientDlg::OnNumClientsChanged ( int iNewNumClients )
 {
     if ( pSettings->bEnableAudioAlerts && iNewNumClients > iClients )
     {
-        PlayAudioAlert ( QUrl::fromLocalFile ( ":sounds/res/sounds/new_user.wav" ) );
+        PlayAudioAlert ( QUrl::fromLocalFile ( ":sounds/res/sounds/new_user.wav" ), pSettings->iNewUserAlertVolume );
     }
 
     // iNewNumClients will be zero on the first trigger of this signal handler when connecting to a new server.

@@ -97,6 +97,7 @@
 #    include <QKeyEvent>
 #    include <QStackedLayout>
 #    include <QSoundEffect>
+#    include <QAudio>
 #    include "ui_aboutdlgbase.h"
 #endif
 
@@ -495,7 +496,7 @@ public:
     virtual QSize sizeHint() const override;
 };
 
-void PlayAudioAlert ( QUrl soundUrl );
+void PlayAudioAlert ( QUrl soundUrl, const int iVolumePercent = 100 );
 #endif
 
 /******************************************************************************\

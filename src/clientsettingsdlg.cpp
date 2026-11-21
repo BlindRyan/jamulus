@@ -420,6 +420,30 @@ CClientSettingsDlg::CClientSettingsDlg ( CClient* pNCliP, CClientSettings* pNSet
                                         "A second sound device may be required to hear the alerts." ) );
     chbAudioAlerts->setAccessibleName ( tr ( "Audio Alerts check box" ) );
 
+    // audio alert volumes
+    QString strChatAlertVolume = "<b>" + tr ( "Chat Alert Volume" ) + ":</b> " +
+                                 tr ( "Sets how loud the sound is when a chat message arrives. "
+                                      "0 % silences this alert only. A short preview plays when you change it." );
+    lblChatAlertVolume->setWhatsThis ( strChatAlertVolume );
+    sldChatAlertVolume->setWhatsThis ( strChatAlertVolume );
+    sldChatAlertVolume->setAccessibleName ( tr ( "Chat Alert Volume slider" ) );
+    sldChatAlertVolume->setAccessibleDescription ( tr ( "Volume of the chat message alert in percent. Use the arrow keys to adjust." ) );
+    sldChatAlertVolume->setToolTip ( tr ( "Chat alert volume" ) );
+
+    QString strNewUserAlertVolume = "<b>" + tr ( "New User Alert Volume" ) + ":</b> " +
+                                    tr ( "Sets how loud the sound is when someone joins the server. "
+                                         "0 % silences this alert only. A short preview plays when you change it." );
+    lblNewUserAlertVolume->setWhatsThis ( strNewUserAlertVolume );
+    sldNewUserAlertVolume->setWhatsThis ( strNewUserAlertVolume );
+    sldNewUserAlertVolume->setAccessibleName ( tr ( "New User Alert Volume slider" ) );
+    sldNewUserAlertVolume->setAccessibleDescription (
+        tr ( "Volume of the alert when someone joins the server, in percent. Use the arrow keys to adjust." ) );
+    sldNewUserAlertVolume->setToolTip ( tr ( "New user alert volume" ) );
+
+    // the percentage labels are only visual; the screen reader reads the slider value itself
+    lblChatAlertVolumeValue->setAccessibleName ( tr ( "Chat Alert Volume value" ) );
+    lblNewUserAlertVolumeValue->setAccessibleName ( tr ( "New User Alert Volume value" ) );
+
     // MIDI settings
     grbMidiControls->setWhatsThis ( tr ( "Enable/disable MIDI-in port" ) );
     grbMidiControls->setAccessibleName ( tr ( "MIDI-in port check box" ) );
@@ -560,6 +584,17 @@ CClientSettingsDlg::CClientSettingsDlg ( CClient* pNCliP, CClientSettings* pNSet
 
     // init audio alerts
     chbAudioAlerts->setCheckState ( pSettings->bEnableAudioAlerts ? Qt::Checked : Qt::Unchecked );
+
+    // init audio alert volumes (block signals so no preview sound plays on start-up)
+    sldChatAlertVolume->blockSignals ( true );
+    sldChatAlertVolume->setValue ( pSettings->iChatAlertVolume );
+    sldChatAlertVolume->blockSignals ( false );
+    lblChatAlertVolumeValue->setText ( QString ( "%1 %" ).arg ( pSettings->iChatAlertVolume ) );
+
+    sldNewUserAlertVolume->blockSignals ( true );
+    sldNewUserAlertVolume->setValue ( pSettings->iNewUserAlertVolume );
+    sldNewUserAlertVolume->blockSignals ( false );
+    lblNewUserAlertVolumeValue->setText ( QString ( "%1 %" ).arg ( pSettings->iNewUserAlertVolume ) );
 
     // update feedback detection
     chbDetectFeedback->setCheckState ( pSettings->bEnableFeedbackDetection ? Qt::Checked : Qt::Unchecked );
@@ -725,6 +760,22 @@ CClientSettingsDlg::CClientSettingsDlg ( CClient* pNCliP, CClientSettings* pNSet
     QObject::connect ( chbDetectFeedback, &QCheckBox::stateChanged, this, &CClientSettingsDlg::OnFeedbackDetectionChanged );
 
     QObject::connect ( chbAudioAlerts, &QCheckBox::stateChanged, this, &CClientSettingsDlg::OnAudioAlertsChanged );
+
+    // audio alert volume sliders, with a short delay before the preview so holding an arrow key plays it once
+    QObject::connect ( sldChatAlertVolume, &QSlider::valueChanged, this, &CClientSettingsDlg::OnChatAlertVolumeChanged );
+    QObject::connect ( sldNewUserAlertVolume, &QSlider::valueChanged, this, &CClientSettingsDlg::OnNewUserAlertVolumeChanged );
+
+    TimerChatAlertPreview.setSingleShot ( true );
+    TimerChatAlertPreview.setInterval ( 350 );
+    QObject::connect ( &TimerChatAlertPreview, &QTimer::timeout, this, [this]() {
+        PlayAudioAlert ( QUrl::fromLocalFile ( ":sounds/res/sounds/new_message.wav" ), pSettings->iChatAlertVolume );
+    } );
+
+    TimerNewUserAlertPreview.setSingleShot ( true );
+    TimerNewUserAlertPreview.setInterval ( 350 );
+    QObject::connect ( &TimerNewUserAlertPreview, &QTimer::timeout, this, [this]() {
+        PlayAudioAlert ( QUrl::fromLocalFile ( ":sounds/res/sounds/new_user.wav" ), pSettings->iNewUserAlertVolume );
+    } );
 
     // line edits
     QObject::connect ( edtNewClientLevel, &QLineEdit::editingFinished, this, &CClientSettingsDlg::OnNewClientLevelEditingFinished );
@@ -1274,6 +1325,20 @@ void CClientSettingsDlg::OnMeterStyleActivated ( int iMeterStyleIdx )
 }
 
 void CClientSettingsDlg::OnAudioAlertsChanged ( int value ) { pSettings->bEnableAudioAlerts = value == Qt::Checked; }
+
+void CClientSettingsDlg::OnChatAlertVolumeChanged ( int value )
+{
+    pSettings->iChatAlertVolume = value;
+    lblChatAlertVolumeValue->setText ( QString ( "%1 %" ).arg ( value ) );
+    TimerChatAlertPreview.start();
+}
+
+void CClientSettingsDlg::OnNewUserAlertVolumeChanged ( int value )
+{
+    pSettings->iNewUserAlertVolume = value;
+    lblNewUserAlertVolumeValue->setText ( QString ( "%1 %" ).arg ( value ) );
+    TimerNewUserAlertPreview.start();
+}
 
 void CClientSettingsDlg::OnAutoJitBufStateChanged ( int value )
 {
