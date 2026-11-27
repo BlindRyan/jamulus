@@ -1,0 +1,52 @@
+name: Attach alert-volume builds to release
+
+# When a release is published on GitHub, attach the newest successful Auto-Build
+# of the autobuild/alert-volume-sliders branch (Jamulus with Chat Alert Volume and
+# New User Alert Volume sliders) as permanent downloads with fixed names, e.g.
+#   https://github.com/BlindRyan/jamulus/releases/latest/download/Jamulus-AlertVolumes-Windows.exe
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  attach:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download the newest successful build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          RUN=$(gh run list -R "$GITHUB_REPOSITORY" --workflow autobuild.yml --branch autobuild/alert-volume-sliders \
+                --status success --limit 1 --json databaseId -q '.[0].databaseId')
+          echo "Using build run $RUN"
+          gh run download "$RUN" -R "$GITHUB_REPOSITORY" -D builds
+          find builds -type f | sort
+
+      - name: Give the files simple names
+        run: |
+          mkdir -p out
+          find builds -type f | while read -r f; do
+            n=$(basename "$f")
+            case "$n" in
+              *_win_jack.exe)                   new=Jamulus-AlertVolumes-Windows-JACK.exe ;;
+              *_win.exe)                        new=Jamulus-AlertVolumes-Windows.exe ;;
+              *_mac_legacy.dmg)                 new=Jamulus-AlertVolumes-Mac-older.dmg ;;
+              *_mac.dmg)                        new=Jamulus-AlertVolumes-Mac.dmg ;;
+              *_android.apk)                    new=Jamulus-AlertVolumes-Android.apk ;;
+              jamulus-headless_*_ubuntu_*.deb)  new=Jamulus-AlertVolumes-Linux-server-${n##*_ubuntu_} ;;
+              jamulus_*_ubuntu_*.deb)           new=Jamulus-AlertVolumes-Linux-${n##*_ubuntu_} ;;
+              *) echo "Skipping $n"; continue ;;
+            esac
+            cp "$f" "out/$new"
+          done
+          ls -la out
+
+      - name: Attach to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" out/* --clobber -R "$GITHUB_REPOSITORY"
